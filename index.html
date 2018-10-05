@@ -10,8 +10,38 @@
     <title>PokemonApp</title>
 </head>
 <body>
-    <section>
-        <h1> Lista de pokemon </h1>
+    <section id="container">
+        <h1> Pokemon List </h1>
+        <div id="filtros">
+            <label for="sel_tipo1"> First type </label>
+            <select name="tipo" id="sel_tipo1">
+
+            </select>
+            <label for="sel_tipo2">Second type</label>
+            <select name="tipo" id="sel_tipo2">
+
+            </select>
+
+            <label for="orderby_stats"> Order By</label>
+            <select id="orderby_stats">
+                <option value="">default</option>
+                <option value="attack">attack</option>
+                <option value="defense">defense</option>
+                <option value="hp">hp</option>
+                <option value="special-attack">special-attack</option>
+                <option value="special-defense">special-defense</option>
+                <option value="speed">speed</option>
+            </select>
+
+            <label for="buscador">Search</label>
+            <input type="text" id="buscador">
+            
+        </div>
+        <div class="loader">
+            <img src="img/magikarp.gif">
+            <br/>
+            <h1>LOADING...</h1>
+        </div>
         <div id="pokemons">
             
         </div>
