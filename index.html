@@ -12,7 +12,19 @@
 <body>
     <section id="container">
         <h1> Pokemon List </h1>
-        <div id="filtros">
+        <div>
+            <label for="gen">Generation</label>
+            <select id="gen">
+                <option value="1">First</option>
+                <option value="2">Second</option>
+                <option value="3">Third</option>
+                <option value="4">Fourth</option>
+                <option value="5">Fifth</option>
+                <option value="6">Sixth</option>
+                <option value="7">Seventh</option>
+            </select>
+        </div>
+        <div id="filtros" class="ocultar">
             <label for="sel_tipo1"> First type </label>
             <select name="tipo" id="sel_tipo1">
 
@@ -32,10 +44,19 @@
                 <option value="special-defense">special-defense</option>
                 <option value="speed">speed</option>
             </select>
+            <span id="asc_desc" style="cursor: pointer;" class="ocultar">&darr;</span>
 
             <label for="buscador">Search</label>
             <input type="text" id="buscador">
             
+
+        </div>
+
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <p>Some text in the Modal..</p>
+            </div>
         </div>
         <div class="loader">
             <img src="img/magikarp.gif">

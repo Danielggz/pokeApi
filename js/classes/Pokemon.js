@@ -30,4 +30,13 @@ export class Pokemon{
         }
         return `<strong>type</strong>: ${this.types['1']}/${this.types['2']}`;
     }
+
+    setDescription(desc){
+        this.description = desc;
+    }
+
+    setData(data){
+        this.data = data; //DATA ARRAY
+        //{base_happiness, capture_rate, gender_rate}
+    }
 }
