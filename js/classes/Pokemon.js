@@ -11,7 +11,7 @@ export class Pokemon{
         return this.name.charAt(0).toUpperCase() + this.name.slice(1);;
     }
 
-    getStats(){
+    statsToString(){
         return `<strong>Base stats:</strong><br/>
         <ul>
         <li>attack: ${this.stats['attack']} <br/></li>
@@ -39,4 +39,18 @@ export class Pokemon{
         this.data = data; //DATA ARRAY
         //{base_happiness, capture_rate, gender_rate}
     }
+
+    dataToString(){
+        return `<strong>Other data:</strong><br/>
+        <ul>
+        <li>Base Happiness: ${this.data['base_happiness']} <br/></li>
+        <li>Capture Rate: ${this.data['capture_rate']}<br/></li>
+        <li>Gender Rate: ${this.data['gender_rate']}<br/></li>
+        </ul>`;
+    }
+
+    setEvolutionChain(evol){
+        this.evolutionChain = evol;
+    }
+
 }

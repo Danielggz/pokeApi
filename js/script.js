@@ -32,30 +32,43 @@ const colores = {
 // VARIABLES GLOBALES
 var selectedStat = ''; //ORDENAR POR STAT
 var asc_desc = 0; //DIRECCIÓN DE ORDENACIÓN
-
+var myStorage = window.localStorage;
+var pokeDex = [];
 
 window.onload = function()  
 {
-    var pokeDex = [];
     var section = document.getElementById("pokemons");
-    var xmlReq = new XMLHttpRequest();
-    var url = "https://pokeapi.co/api/v2/pokemon/";
 
-    xmlReq.onreadystatechange = function() 
-    {
-        if (this.readyState == 4 && this.status == 200) 
+    if(myStorage.getItem("pokemons")!=null){
+        var pokemons = JSON.parse(myStorage.getItem("pokemons"));
+        pokemons.forEach(pkmn=>{
+            var pk = new Pokemon(pkmn.name, pkmn.id, pkmn.img, pkmn.types, pkmn.stats);
+            if(pkmn["description"]!=undefined) pk.setDescription(pkmn.description);
+            if(pkmn["data"]!=undefined) pk.setData(pkmn.data);
+            if(pkmn["evolutionChain"]!=undefined) pk.setEvolutionChain(pkmn.evolutionChain);
+            pokeDex.push(pk);
+        });
+        boot();
+    }else{
+        var xmlReq = new XMLHttpRequest();
+        var url = "https://pokeapi.co/api/v2/pokemon/";
+    
+        xmlReq.onreadystatechange = function() 
         {
-            var result = JSON.parse(this.response);
-            // var generation = document.getElementById("gen");
-            // var pkmnNumber = cargarGeneracion(generation.value);
-            var pokeArray = result.results.slice(0, 151);
-            cargarPokemon(pokeArray);
-        }
-    };
-
-    xmlReq.open("GET", url, true);
-    xmlReq.send();
-
+            if (this.readyState == 4 && this.status == 200) 
+            {
+                var result = JSON.parse(this.response);
+                // var generation = document.getElementById("gen");
+                // var pkmnNumber = cargarGeneracion(generation.value);
+                var pokeArray = result.results.slice(0, 386);
+                cargarPokemon(pokeArray);
+            }
+        };
+    
+        xmlReq.open("GET", url, true);
+        xmlReq.send();
+    }
+    
     var modal = document.getElementById('myModal');
     var span = document.getElementsByClassName("close")[0];
     span.onclick = function() {
@@ -63,6 +76,17 @@ window.onload = function()
     }
     
     // <----------------------------MÉTODOS PRINCIPALES------------------------------->
+    function boot(){
+        pokeDex.sort(ordenarPokemon);
+        generarPokeTabla(pokeDex);
+        cargarMenu();
+        cargarSelectTipos();
+        cargarOrderByStats(); 
+        cargarBuscador();
+        cargarOrderAscDesc();
+        var loader = document.getElementsByClassName('loader')[0].setAttribute("style", "display: none;");
+    }
+
     function cargarGeneracion(version){
         switch (version) {
             case "1":
@@ -100,6 +124,7 @@ window.onload = function()
                 if (this.readyState == 4 && this.status == 200) 
                 {
                     var pokeObject = JSON.parse(this.response);
+                    console.log(pokeObject);
                     var stats = {};
                     pokeObject.stats.forEach(element => {
                         stats[element.stat.name] = element.base_stat;
@@ -112,16 +137,10 @@ window.onload = function()
 
                     pokeDex.push(new Pokemon(pokemon.name, pokeObject.id, pokeImg, types, stats));
 
-                    if(pokeDex.length == 151)
+                    if(pokeDex.length == 386)
                     {
-                        pokeDex.sort(ordenarPokemon);
-                        generarPokeTabla(pokeDex);
-                        cargarMenu();
-                        cargarSelectTipos();
-                        cargarOrderByStats(); 
-                        cargarBuscador();
-                        cargarOrderAscDesc();
-                        var loader = document.getElementsByClassName('loader')[0].setAttribute("style", "display: none;");
+                        myStorage.setItem("pokemons", JSON.stringify(pokeDex));
+                        boot();
                     }
                 }
             }
@@ -145,7 +164,7 @@ window.onload = function()
             img.src = pkmn.img;
             var tooltip_content = document.createElement("span");
             tooltip_content.className = "tooltiptext";
-            tooltip_content.innerHTML = "<strong>" + pkmn.getName() + "</strong><hr/>" + pkmn.getStats() + "<hr/>" + pkmn.getTypes();
+            tooltip_content.innerHTML = "<strong>" + pkmn.getName() + "</strong><hr/>" + pkmn.statsToString() + "<hr/>" + pkmn.getTypes();
 
             art.appendChild(img);
             art.appendChild(a);
@@ -207,32 +226,57 @@ window.onload = function()
 
     function cardEvent(evt){
         var id = evt.currentTarget.id.slice(4);
-        var xmlCardReq = new XMLHttpRequest();
-        url=`https://pokeapi.co/api/v2/pokemon-species/${id}/`;
-        xmlCardReq.open("GET", url, true);
-        xmlCardReq.send(null);
-        xmlCardReq.onreadystatechange = function()
+        var pkmn = pokeDex.filter(pk=>{
+            if(pk.id==id)return true;
+        })[0];
+
+        if(pkmn.evolutionChain!=undefined && pkmn.description!=undefined && pkmn.data!=undefined)
         {
-            if (this.readyState == 4 && this.status == 200) 
+            createModalContent(pkmn);
+            modal.style.display = "block";
+        }
+        else{
+            var xmlCardReq = new XMLHttpRequest();
+            url=`https://pokeapi.co/api/v2/pokemon-species/${id}/`;
+            xmlCardReq.open("GET", url, true);
+            xmlCardReq.send(null);
+            xmlCardReq.onreadystatechange = function()
             {
-                var info = JSON.parse(this.response);
-                var pkmn = pokeDex.filter(pk=>{
-                    if(pk.id==id)return true;
-                })[0];
-                var desc = info.flavor_text_entries.filter(d=>{
-                    if(d.language.name=="es") return true;
-                });
+                if (this.readyState == 4 && this.status == 200) 
+                {
+                    var info = JSON.parse(this.response);
+                    
+                    var desc = info.flavor_text_entries.filter(d=>{
+                        if(d.language.name=="es") return true;
+                    });
+                    var data = {
+                        "base_happiness": info.base_happiness,
+                        "capture_rate": info.capture_rate,
+                        "gender_rate": info.gender_rate,
+                    }
+    
+                    pkmn.setDescription(desc);
+                    pkmn.setData(data);
+                    var xmlCardReq2 = new XMLHttpRequest();
+                    var url2 = info.evolution_chain.url;
+                    xmlCardReq2.open("GET", url2, true);
+                    xmlCardReq2.send(null);
+                    xmlCardReq2.onreadystatechange = function()
+                    {
+                        if(this.readyState == 4 && this.status == 200)
+                        {
+                            var evolution_data = JSON.parse(this.response)["chain"];
+                            if(evolution_data!=undefined)
+                            {
+                                //TODO 
 
-                var data = {
-                    "base_happiness":info.base_happiness,
-                    "capture_rate":info.capture_rate,
-                    "gender_rate":info.gender_rate,
+                                createModalContent(pkmn);
+                                modal.style.display = "block";
+                            }
+                        }
+                    }
+                    myStorage.setItem("pokemons", JSON.stringify(pokeDex));
                 }
-
-                pkmn.setDescription(desc);
-                pkmn.setData(data);
-
-                modal.style.display = "block";
             }
         }
     }
@@ -352,10 +396,63 @@ window.onload = function()
 
     // <------------------------------------MODAL-----------------------------------> 
     function createModalContent(pkmn){
+        var modal_content = document.getElementById("modal_content");
+        modal_content.innerHTML = "";
+
+
         var card = document.createElement("div");
+        //MAIN IMG
         var img = document.createElement("img");
         img.src = pkmn.img;
-        
+        img.className = 'card_img';
+
+        //DESCRIPTION
+        var description = document.createElement("p");
+        var randomDesc = pkmn.description[Math.floor(Math.random()* pkmn.description.length)].flavor_text;
+        description.innerHTML = randomDesc;
+        description.id = "description";
+
+        //STATS
+        var statList = document.createElement("div");
+        statList.id = "statList";
+        statList.innerHTML = pkmn.statsToString();
+
+        //OTHER DATA
+        var otherDataList = document.createElement("div");
+        otherDataList.id = "otherDataList";
+        otherDataList.innerHTML = pkmn.dataToString();
+
+        //EVOLUTION CHAIN
+        var evolutionChain = document.createElement("div");
+        evolutionChain.id = "evolutionChain";
+        var evolutionIds = [];
+        for (const evolution in pkmn.evolutionChain) {
+            if (pkmn.evolutionChain.hasOwnProperty(evolution)) {
+                const element = pkmn.evolutionChain[evolution];
+                var pkmnEvol = pokeDex.find(pk =>{
+                    if(pk.name == element)return true;
+                });
+                var chainImg = document.createElement("img");
+                if(pkmnEvol!=undefined)
+                {
+                    chainImg.src = pkmnEvol.img;
+                }
+                evolutionChain.appendChild(chainImg);
+            }
+        }
+
+        //DATA
+        var data_div = document.createElement("div");
+        data_div.id = "data";
+        data_div.innerHTML += "<h2>" + pkmn.name +"info</h2>";
+        data_div.appendChild(description);
+        data_div.appendChild(statList);
+        data_div.appendChild(otherDataList);
+        data_div.appendChild(evolutionChain);
+
+        card.appendChild(img);
+        card.appendChild(data_div);
+        modal_content.appendChild(card);
     }
     // <------------------------------------------------------------------------------>
 }
