@@ -12,45 +12,90 @@
 </head>
 <body>
     <section id="container">
-        <h1> Pokemon List </h1>
-        <div>
-            <label for="gen">Generation</label>
-            <select id="gen">
-                <option value="1">First</option>
-                <option value="2">Second</option>
-                <option value="3">Third</option>
-                <option value="4">Fourth</option>
-                <option value="5">Fifth</option>
-                <option value="6">Sixth</option>
-                <option value="7">Seventh</option>
-            </select>
+        <div id="titulo">
+            Pokemon List
+        </div>
+        <div id="genTitulo">
+            <h2>Select generation</h2>
+        </div>
+
+        <div id="generation">
+            <div id="firstGen">
+                <label> First </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="first" checked>
+            </div>
+
+            <div id="secondGen">
+                <label> Second </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="second">
+            </div>
+
+            <div id="thirdGen">
+                <label> Third </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="third">
+            </div>
+
+            <div id="fourthGen">
+                <label> Fourth </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="fourth">
+            </div>
+
+            <div id="fifthGen">
+                <label> Fifth </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="fifth">
+            </div>
+
+            <div id="sixthGen">
+                <label> Sixth </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="sixth">
+            </div>
+
+            <div id="seventhGen">
+                <label> Seventh </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="seventh">
+            </div>
+
+            <div id="specialGen">
+                <label> Specials </label>
+                <input class="regular-checkbox" name="genCheckbox" type="checkbox" value="specials">
+            </div>
+        </div>
+
+        <div id="filtrosTitulo">
+            <h2> Filters </h2>
         </div>
         <div id="filtros" class="ocultar">
-            <label for="sel_tipo1"> First type </label>
-            <select name="tipo" id="sel_tipo1">
-
-            </select>
-            <label for="sel_tipo2">Second type</label>
-            <select name="tipo" id="sel_tipo2">
-
-            </select>
-
-            <label for="orderby_stats"> Order By</label>
-            <select id="orderby_stats">
-                <option value="">default</option>
-                <option value="attack">attack</option>
-                <option value="defense">defense</option>
-                <option value="hp">hp</option>
-                <option value="special-attack">special-attack</option>
-                <option value="special-defense">special-defense</option>
-                <option value="speed">speed</option>
-            </select>
-            <span id="asc_desc" style="cursor: pointer;" class="ocultar">&darr;</span>
-
-            <label for="buscador">Search</label>
-            <input type="text" id="buscador">
+            <div>
+                <label for="sel_tipo1"> First type </label>
+                <select name="tipo" id="sel_tipo1" class='styled-select slate'></select>
+            </div>
             
 
+            <div>
+                <label for="sel_tipo2">Second type</label>
+                <select name="tipo" id="sel_tipo2" class='styled-select slate'></select>
+            </div>
+            
+
+            <div>
+                <label for="orderby_stats"> Order by</label>
+                <select id="orderby_stats" class='styled-select slate'>
+                    <option value="">default</option>
+                    <option value="attack">attack</option>
+                    <option value="defense">defense</option>
+                    <option value="hp">hp</option>
+                    <option value="special-attack">special-attack</option>
+                    <option value="special-defense">special-defense</option>
+                    <option value="speed">speed</option>
+                </select>
+                <span id="asc_desc" style="cursor: pointer;" class="ocultar">&darr;</span>
+            </div>
+
+            <div>
+                <label for="buscador">Search</label>
+                <input type="text" id="buscador">
+            </div>
+            
         </div>
 
         <div id="myModal" class="modal">
