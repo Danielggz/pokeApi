@@ -33,8 +33,7 @@ const colores = {
 var selectedStat = ''; //ORDENAR POR STAT
 var asc_desc = 0; //DIRECCIÓN DE ORDENACIÓN
 var myStorage = window.localStorage;
-var pokeDex = [];
-var pokeDexGen = {
+var pokeDex = {
     "first": [],
     "second": [],
     "third":[],
@@ -57,16 +56,21 @@ window.onload = function()
 
     if(myStorage.getItem("pokemons")!=null){
         var pokemons = JSON.parse(myStorage.getItem("pokemons"));
-        pokemons.forEach(pkmn=>{
-            var pk = new Pokemon(pkmn.name, pkmn.id, pkmn.img, pkmn.types, pkmn.stats);
-            if(pkmn["description"]!=undefined) pk.setDescription(pkmn.description);
-            if(pkmn["data"]!=undefined) pk.setData(pkmn.data);
-            if(pkmn["evolutionChain"]!=undefined) pk.setEvolutionChain(pkmn.evolutionChain);
-            pokeDex.push(pk);
-        });
-        boot();
+        for (const gen in pokemons) {
+            if (pokemons.hasOwnProperty(gen)) {
+                const pkmns = pokemons[gen];
+                pkmns.forEach(pkmn=>{
+                    var pk = new Pokemon(pkmn.name, pkmn.id, pkmn.img, pkmn.types, pkmn.stats);
+                    if(pkmn["description"]!=undefined) pk.setDescription(pkmn.description);
+                    if(pkmn["data"]!=undefined) pk.setData(pkmn.data);
+                    if(pkmn["evolutionChain"]!=undefined) pk.setEvolutionChain(pkmn.evolutionChain);
+                    pokeDex[gen].push(pk);
+                });
+                cargarGeneraciones(["first"]);
+            }
+        }
     }else{
-        cargarGeneracion("first");
+        cargarGeneraciones(["first"]);
     }
     
     var modal = document.getElementById('myModal');
@@ -77,34 +81,59 @@ window.onload = function()
     
     // <----------------------------MÉTODOS PRINCIPALES------------------------------->
     function boot(){
-        pokeDex.sort(ordenarPokemon);
-        generarPokeTabla(pokeDex);
+        ordenarPokeDex();
+        var generationList = [];
+        var checkboxes = document.getElementsByName("genCheckbox");
+        checkboxes.forEach(checkbox=>{
+            if(checkbox.checked)
+            {
+                generationList.push(checkbox.value);
+            }
+        });
+        var filteredPokedex = {};
+        for (const gen in pokeDex) {
+            if (pokeDex.hasOwnProperty(gen)) {
+                const element = pokeDex[gen];
+                if(generationList.indexOf(gen)>-1)
+                {
+                    filteredPokedex[gen] = element;
+                }
+            }
+        }
+        generarPokeTabla(filteredPokedex);
         var loader = document.getElementsByClassName('loader')[0].setAttribute("style", "display: none;");
     }
 
     function generarPokeTabla(pokeArray)
     {
+        console.log(pokeArray);
         document.getElementById('pokemons').innerHTML= '';
 
-        pokeArray.forEach(pkmn => {
-            var art = document.createElement("article");
-            art.className = "tooltip";
-            art.style = colorStyling(pkmn);
-            var a = document.createElement("a");
-            a.innerText = pkmn.name;
-            var img = document.createElement("img");
-            img.src = pkmn.img;
-            var tooltip_content = document.createElement("span");
-            tooltip_content.className = "tooltiptext";
-            tooltip_content.innerHTML = "<strong>" + pkmn.getName() + "</strong><hr/>" + pkmn.statsToString() + "<hr/>" + pkmn.getTypes();
-
-            art.appendChild(img);
-            art.appendChild(a);
-            art.appendChild(tooltip_content);
-            art.id = "pkmn" + pkmn.id;
-            art.addEventListener("click", cardEvent);
-            section.appendChild(art);
-        });
+        for (const gen in pokeArray) {
+            if (pokeArray.hasOwnProperty(gen)) {
+                const pkmns = pokeArray[gen];
+                pkmns.forEach(pkmn => {
+                    var art = document.createElement("article");
+                    art.className = "tooltip";
+                    art.style = colorStyling(pkmn);
+                    var a = document.createElement("a");
+                    a.innerText = pkmn.name;
+                    var img = document.createElement("img");
+                    img.src = pkmn.img;
+                    var tooltip_content = document.createElement("span");
+                    tooltip_content.className = "tooltiptext";
+                    tooltip_content.innerHTML = "<strong>" + pkmn.getName() + "</strong><hr/>" + pkmn.statsToString() + "<hr/>" + pkmn.getTypes();
+        
+                    art.appendChild(img);
+                    art.appendChild(a);
+                    art.appendChild(tooltip_content);
+                    art.id = "pkmn" + pkmn.id;
+                    art.addEventListener("click", cardEvent);
+                    section.appendChild(art);
+                });
+            }
+        }
+        
     }
 
     function filtrar(){
@@ -154,10 +183,6 @@ window.onload = function()
     function cargarMenu(){
         var menu = document.getElementById("filtros");
         menu.className = "mostrar";
-    }
-
-    function createEvolutionChain(){
-
     }
 
     function genNumber(gen)
@@ -253,60 +278,72 @@ window.onload = function()
         }
     }
 
-    function cargarPokemon(pokeArray) //AÑADIR VARIABLE GENERACIÓN PARA QUE CARGUE LAS QUE HAYA
+    function cargarPokemon(pokeArray, generation) //AÑADIR VARIABLE GENERACIÓN PARA QUE CARGUE LAS QUE HAYA
     {
-        pokeArray.forEach(pokemon => {
+        if(pokeDex[generation].length==0)
+        {
+            pokeArray.forEach(pokemon => {
 
-            var xmlReq2 = new XMLHttpRequest();
-            var url2 = pokemon.url;
-
-            xmlReq2.onreadystatechange = function()
-            {
-                if (this.readyState == 4 && this.status == 200) 
+                var xmlReq2 = new XMLHttpRequest();
+                var url2 = pokemon.url;
+    
+                xmlReq2.onreadystatechange = function()
                 {
-                    var pokeObject = JSON.parse(this.response);
-                    var stats = {};
-                    pokeObject.stats.forEach(element => {
-                        stats[element.stat.name] = element.base_stat;
-                    });
-                    var types = {};
-                    pokeObject.types.forEach(element => {
-                        types[element.slot] = element.type.name;
-                    });
-                    var pokeImg = pokeObject.sprites.front_default;
-
-                    pokeDex.push(new Pokemon(pokemon.name, pokeObject.id, pokeImg, types, stats));
-
-                    if(pokeDex.length == pokeArray.length)
+                    if (this.readyState == 4 && this.status == 200) 
                     {
-                        myStorage.setItem("pokemons", JSON.stringify(pokeDex));
-                        boot();
+                        var pokeObject = JSON.parse(this.response);
+                        var stats = {};
+                        pokeObject.stats.forEach(element => {
+                            stats[element.stat.name] = element.base_stat;
+                        });
+                        var types = {};
+                        pokeObject.types.forEach(element => {
+                            types[element.slot] = element.type.name;
+                        });
+                        var pokeImg = pokeObject.sprites.front_default;
+                        
+                        pokeDex[generation].push(new Pokemon(pokemon.name, pokeObject.id, pokeImg, types, stats));
+    
+                        if(pokeDex[generation].length == pokeArray.length)
+                        {
+                            myStorage.setItem("pokemons", JSON.stringify(pokeDex));
+                            boot();
+                        }
                     }
                 }
-            }
-
-            xmlReq2.open("GET", url2, true);
-            xmlReq2.send();
-        });
+    
+                xmlReq2.open("GET", url2, true);
+                xmlReq2.send();
+            });
+        }
     }
 
-    function cargarGeneracion(generation)
+    function cargarGeneraciones(generationList)
     {
-        var xmlReq = new XMLHttpRequest();
-        var url = "https://pokeapi.co/api/v2/pokemon/";
-    
-        xmlReq.onreadystatechange = function() 
-        {
-            if (this.readyState == 4 && this.status == 200) 
+        for (let i = 0; i < generationList.length; i++) {
+            const generation = generationList[i];
+            if(pokeDex[generation].length>0)
             {
-                var result = JSON.parse(this.response);
-                var pokeArray = result.results.slice(genNumber(generation)[0], genNumber(generation)[1]);
-                cargarPokemon(pokeArray);
+                boot();
+            }else{
+                var xmlReq = new XMLHttpRequest();
+                var url = "https://pokeapi.co/api/v2/pokemon/";
+            
+                xmlReq.onreadystatechange = function() 
+                {
+                    if (this.readyState == 4 && this.status == 200) 
+                    {
+                        var result = JSON.parse(this.response);
+                        var pokeArray = result.results.slice(genNumber(generation)[0], genNumber(generation)[1]);
+                        cargarPokemon(pokeArray, generation);
+                    }
+                };
+            
+                xmlReq.open("GET", url, true);
+                xmlReq.send();
             }
-        };
-    
-        xmlReq.open("GET", url, true);
-        xmlReq.send();
+        }
+        
     }
 
     // <------------------------------------------------------------------------------>
@@ -329,9 +366,9 @@ window.onload = function()
                         selectedGen.splice(index, 1);
                     }
                 }
+                cargarGeneraciones(selectedGen);     
             });
         });
-        
     }
 
     function cargarSelectTipos(){
@@ -403,6 +440,18 @@ window.onload = function()
 
 
     // <--------------------------MÉTODOS DE ORDENACIÓN------------------------------->
+    function ordenarPokeDex()
+    {
+        for (const gen in pokeDex) {
+            if (pokeDex.hasOwnProperty(gen)) {
+                const pkmns = pokeDex[gen];
+                if(pkmns.length>0)
+                {
+                    pkmns.sort(ordenarPokemon);
+                }
+            }
+        }
+    }
     function ordenarPokemon(p1, p2)
     {
         if(selectedStat != '')
