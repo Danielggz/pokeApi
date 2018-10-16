@@ -130,7 +130,7 @@ window.onload = function()
     }
 
     function filtrar(pokeArray){
-        var filteredArray = {};
+        var filteredArray = [];
         var tipo1 = document.getElementById("sel_tipo1").value;
         var tipo2 = document.getElementById("sel_tipo2").value;
         var orderStatVal = document.getElementById('orderby_stats').value;
@@ -222,6 +222,15 @@ window.onload = function()
         });
 
         return generationList;
+    }
+
+    function executeFilter(){
+        var generationList = arrayChecked();
+        var filteredPokedex = {};
+        generationList.forEach(gen => {
+            filteredPokedex[gen] = filtrar(pokeDex[gen]);
+        });
+        boot(filteredPokedex);
     }
 
     // <------------------------------------------------------------------------------>
@@ -400,12 +409,7 @@ window.onload = function()
                 var tipo1 = document.getElementById("sel_tipo1").value;
                 var tipo2 = document.getElementById("sel_tipo2").value;
 
-                var generationList = arrayChecked();
-                var filteredPokedex = {};
-                generationList.forEach(gen => {
-                    filteredPokedex[gen] = filtrar(pokeDex[gen]);
-                });
-                boot(filteredPokedex);
+                executeFilter();
             });
         });
         
@@ -418,7 +422,7 @@ window.onload = function()
         select.addEventListener("change", ()=>{
             selectedStat = select.value;
             orderEl.className = "mostrar";
-            filtrar();
+            executeFilter();
         });
 
     }
@@ -432,11 +436,11 @@ window.onload = function()
             {
                 element.innerHTML = "&uarr;";
                 asc_desc = 1;
-                filtrar();
+                executeFilter();
             }else if(asc_desc==1){
                 element.innerHTML = "&darr;";
                 asc_desc = 0;
-                filtrar();
+                executeFilter();
             }
         });
     }
@@ -444,7 +448,7 @@ window.onload = function()
     function cargarBuscador(){
         var buscador = document.getElementById('buscador');
         buscador.addEventListener('keyup', ()=>{
-            filtrar();
+            executeFilter();
         })
     }
 
