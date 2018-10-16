@@ -80,20 +80,14 @@ window.onload = function()
     }
     
     // <----------------------------MÉTODOS PRINCIPALES------------------------------->
-    function boot(){
+    function boot(pokeArray){
         ordenarPokeDex();
-        var generationList = [];
-        var checkboxes = document.getElementsByName("genCheckbox");
-        checkboxes.forEach(checkbox=>{
-            if(checkbox.checked)
-            {
-                generationList.push(checkbox.value);
-            }
-        });
+        var generationList = arrayChecked();
+        
         var filteredPokedex = {};
-        for (const gen in pokeDex) {
-            if (pokeDex.hasOwnProperty(gen)) {
-                const element = pokeDex[gen];
+        for (const gen in pokeArray) {
+            if (pokeArray.hasOwnProperty(gen)) {
+                const element = pokeArray[gen];
                 if(generationList.indexOf(gen)>-1)
                 {
                     filteredPokedex[gen] = element;
@@ -106,7 +100,6 @@ window.onload = function()
 
     function generarPokeTabla(pokeArray)
     {
-        console.log(pokeArray);
         document.getElementById('pokemons').innerHTML= '';
 
         for (const gen in pokeArray) {
@@ -136,8 +129,8 @@ window.onload = function()
         
     }
 
-    function filtrar(){
-        var filteredPokedex = [];
+    function filtrar(pokeArray){
+        var filteredArray = {};
         var tipo1 = document.getElementById("sel_tipo1").value;
         var tipo2 = document.getElementById("sel_tipo2").value;
         var orderStatVal = document.getElementById('orderby_stats').value;
@@ -145,18 +138,18 @@ window.onload = function()
 
         if(buscVal != '')
         {
-            filteredPokedex = pokeDex.filter(pkmn=>{
+            filteredArray = pokeArray.filter(pkmn=>{
                 if(pkmn.name.startsWith(buscVal.toLowerCase()))
                 {
                     return true;
                 }
             });
         }else{
-            filteredPokedex = pokeDex;
+            filteredArray = pokeArray;
         }
 
 
-        filteredPokedex = filteredPokedex.filter(pkmn=>{
+        filteredArray = filteredArray.filter(pkmn=>{
             if(tipo1=='all' && tipo2 == 'all')
             {
                 return true;
@@ -177,7 +170,7 @@ window.onload = function()
             }
         }).sort(ordenarPokemon);
 
-        generarPokeTabla(filteredPokedex);
+        return filteredArray;
     }
 
     function cargarMenu(){
@@ -215,6 +208,20 @@ window.onload = function()
             default:
                 break;
         }
+    }
+
+    function arrayChecked(){
+        var generationList = [];
+        var checkboxes = document.getElementsByName("genCheckbox");
+
+        checkboxes.forEach(checkbox=>{
+            if(checkbox.checked)
+            {
+                generationList.push(checkbox.value);
+            }
+        });
+
+        return generationList;
     }
 
     // <------------------------------------------------------------------------------>
@@ -307,7 +314,7 @@ window.onload = function()
                         if(pokeDex[generation].length == pokeArray.length)
                         {
                             myStorage.setItem("pokemons", JSON.stringify(pokeDex));
-                            boot();
+                            boot(pokeDex);
                         }
                     }
                 }
@@ -324,7 +331,7 @@ window.onload = function()
             const generation = generationList[i];
             if(pokeDex[generation].length>0)
             {
-                boot();
+                boot(pokeDex);
             }else{
                 var xmlReq = new XMLHttpRequest();
                 var url = "https://pokeapi.co/api/v2/pokemon/";
@@ -393,7 +400,12 @@ window.onload = function()
                 var tipo1 = document.getElementById("sel_tipo1").value;
                 var tipo2 = document.getElementById("sel_tipo2").value;
 
-                filtrar();
+                var generationList = arrayChecked();
+                var filteredPokedex = {};
+                generationList.forEach(gen => {
+                    filteredPokedex[gen] = filtrar(pokeDex[gen]);
+                });
+                boot(filteredPokedex);
             });
         });
         
