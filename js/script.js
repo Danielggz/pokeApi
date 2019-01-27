@@ -33,7 +33,8 @@ const colores = {
 var selectedStat = ''; //ORDENAR POR STAT
 var asc_desc = 0; //DIRECCIÓN DE ORDENACIÓN
 var myStorage = window.localStorage;
-var pokeDex = {
+var pokeDex = [];
+var fullPokedex = {
     "first": [],
     "second": [],
     "third":[],
@@ -54,24 +55,34 @@ window.onload = function()
     cargarCheckboxes();
     var section = document.getElementById("pokemons");
 
-    if(myStorage.getItem("pokemons")!=null){
-        var pokemons = JSON.parse(myStorage.getItem("pokemons"));
-        for (const gen in pokemons) {
-            if (pokemons.hasOwnProperty(gen)) {
-                const pkmns = pokemons[gen];
-                pkmns.forEach(pkmn=>{
-                    var pk = new Pokemon(pkmn.name, pkmn.id, pkmn.img, pkmn.types, pkmn.stats);
-                    if(pkmn["description"]!=undefined) pk.setDescription(pkmn.description);
-                    if(pkmn["data"]!=undefined) pk.setData(pkmn.data);
-                    if(pkmn["evolutionChain"]!=undefined) pk.setEvolutionChain(pkmn.evolutionChain);
-                    pokeDex[gen].push(pk);
-                });
-                cargarGeneraciones(["first"]);
+    // if(myStorage.getItem("pokemons")!=null){
+    //     var pokemons = JSON.parse(myStorage.getItem("pokemons"));
+    //     pokemons.forEach(pkmn=>{
+    //         var pk = new Pokemon(pkmn.name, pkmn.id, pkmn.img, pkmn.types, pkmn.stats);
+    //         if(pkmn["description"]!=undefined) pk.setDescription(pkmn.description);
+    //         if(pkmn["data"]!=undefined) pk.setData(pkmn.data);
+    //         if(pkmn["evolutionChain"]!=undefined) pk.setEvolutionChain(pkmn.evolutionChain);
+    //         pokeDex.push(pk);
+    //     });
+    //     boot();
+    // }else{
+        var xmlReq = new XMLHttpRequest();
+        var url = "https://pokeapi.co/api/v2/pokemon/";
+    
+        xmlReq.onreadystatechange = function() 
+        {
+            if (this.readyState == 4 && this.status == 200) 
+            {
+                var result = JSON.parse(this.response);
+                var pokeArray = result.results.slice(0,151);
+                cargarPokemon(pokeArray);
+                cargarFullPokedex();
             }
-        }
-    }else{
-        cargarGeneraciones(["first"]);
-    }
+        };
+    
+        xmlReq.open("GET", url, true);
+        xmlReq.send();
+    // }
     
     var modal = document.getElementById('myModal');
     var span = document.getElementsByClassName("close")[0];
@@ -80,21 +91,9 @@ window.onload = function()
     }
     
     // <----------------------------MÉTODOS PRINCIPALES------------------------------->
-    function boot(pokeArray){
-        ordenarPokeDex();
-        var generationList = arrayChecked();
-        
-        var filteredPokedex = {};
-        for (const gen in pokeArray) {
-            if (pokeArray.hasOwnProperty(gen)) {
-                const element = pokeArray[gen];
-                if(generationList.indexOf(gen)>-1)
-                {
-                    filteredPokedex[gen] = element;
-                }
-            }
-        }
-        generarPokeTabla(filteredPokedex);
+    function boot(){
+        pokeDex.sort(ordenarPokemon);
+        generarPokeTabla(pokeDex);
         var loader = document.getElementsByClassName('loader')[0].setAttribute("style", "display: none;");
     }
 
@@ -102,35 +101,29 @@ window.onload = function()
     {
         document.getElementById('pokemons').innerHTML= '';
 
-        for (const gen in pokeArray) {
-            if (pokeArray.hasOwnProperty(gen)) {
-                const pkmns = pokeArray[gen];
-                pkmns.forEach(pkmn => {
-                    var art = document.createElement("article");
-                    art.className = "tooltip";
-                    art.style = colorStyling(pkmn);
-                    var a = document.createElement("a");
-                    a.innerText = pkmn.name;
-                    var img = document.createElement("img");
-                    img.src = pkmn.img;
-                    var tooltip_content = document.createElement("span");
-                    tooltip_content.className = "tooltiptext";
-                    tooltip_content.innerHTML = "<strong>" + pkmn.getName() + "</strong><hr/>" + pkmn.statsToString() + "<hr/>" + pkmn.getTypes();
-        
-                    art.appendChild(img);
-                    art.appendChild(a);
-                    art.appendChild(tooltip_content);
-                    art.id = "pkmn" + pkmn.id;
-                    art.addEventListener("click", cardEvent);
-                    section.appendChild(art);
-                });
-            }
-        }
-        
+        pokeArray.forEach(pkmn => {
+            var art = document.createElement("article");
+            art.className = "tooltip";
+            art.style = colorStyling(pkmn);
+            var a = document.createElement("a");
+            a.innerText = pkmn.name;
+            var img = document.createElement("img");
+            img.src = pkmn.img;
+            var tooltip_content = document.createElement("span");
+            tooltip_content.className = "tooltiptext";
+            tooltip_content.innerHTML = "<strong>" + pkmn.getName() + "</strong><hr/>" + pkmn.statsToString() + "<hr/>" + pkmn.getTypes();
+
+            art.appendChild(img);
+            art.appendChild(a);
+            art.appendChild(tooltip_content);
+            art.id = "pkmn" + pkmn.id;
+            art.addEventListener("click", cardEvent);
+            section.appendChild(art);
+        });
     }
 
-    function filtrar(pokeArray){
-        var filteredArray = [];
+    function filtrar(){
+        var filteredPokedex = [];
         var tipo1 = document.getElementById("sel_tipo1").value;
         var tipo2 = document.getElementById("sel_tipo2").value;
         var orderStatVal = document.getElementById('orderby_stats').value;
@@ -138,18 +131,18 @@ window.onload = function()
 
         if(buscVal != '')
         {
-            filteredArray = pokeArray.filter(pkmn=>{
+            filteredPokedex = pokeDex.filter(pkmn=>{
                 if(pkmn.name.startsWith(buscVal.toLowerCase()))
                 {
                     return true;
                 }
             });
         }else{
-            filteredArray = pokeArray;
+            filteredPokedex = pokeDex;
         }
 
 
-        filteredArray = filteredArray.filter(pkmn=>{
+        filteredPokedex = filteredPokedex.filter(pkmn=>{
             if(tipo1=='all' && tipo2 == 'all')
             {
                 return true;
@@ -170,7 +163,7 @@ window.onload = function()
             }
         }).sort(ordenarPokemon);
 
-        return filteredArray;
+        generarPokeTabla(filteredPokedex);
     }
 
     function cargarMenu(){
@@ -210,29 +203,6 @@ window.onload = function()
         }
     }
 
-    function arrayChecked(){
-        var generationList = [];
-        var checkboxes = document.getElementsByName("genCheckbox");
-
-        checkboxes.forEach(checkbox=>{
-            if(checkbox.checked)
-            {
-                generationList.push(checkbox.value);
-            }
-        });
-
-        return generationList;
-    }
-
-    function executeFilter(){
-        var generationList = arrayChecked();
-        var filteredPokedex = {};
-        generationList.forEach(gen => {
-            filteredPokedex[gen] = filtrar(pokeDex[gen]);
-        });
-        boot(filteredPokedex);
-    }
-
     // <------------------------------------------------------------------------------>
 
     // <--------------------------------API REQUESTS---------------------------------->
@@ -258,7 +228,7 @@ window.onload = function()
                 if (this.readyState == 4 && this.status == 200) 
                 {
                     var info = JSON.parse(this.response);
-                    
+                    console.log(info);
                     var desc = info.flavor_text_entries.filter(d=>{
                         if(d.language.name=="es") return true;
                     });
@@ -294,72 +264,78 @@ window.onload = function()
         }
     }
 
-    function cargarPokemon(pokeArray, generation) //AÑADIR VARIABLE GENERACIÓN PARA QUE CARGUE LAS QUE HAYA
+    function cargarPokemon(pokeArray) //AÑADIR VARIABLE GENERACIÓN PARA QUE CARGUE LAS QUE HAYA
     {
-        if(pokeDex[generation].length==0)
-        {
-            pokeArray.forEach(pokemon => {
+        pokeDex = [];
+        pokeArray.forEach(pokemon => {
 
-                var xmlReq2 = new XMLHttpRequest();
-                var url2 = pokemon.url;
-    
-                xmlReq2.onreadystatechange = function()
+            var xmlReq2 = new XMLHttpRequest();
+            var url2 = pokemon.url;
+
+            xmlReq2.onreadystatechange = function()
+            {
+                if (this.readyState == 4 && this.status == 200) 
                 {
-                    if (this.readyState == 4 && this.status == 200) 
+                    var pokeObject = JSON.parse(this.response);
+                    var stats = {};
+                    pokeObject.stats.forEach(element => {
+                        stats[element.stat.name] = element.base_stat;
+                    });
+                    var types = {};
+                    pokeObject.types.forEach(element => {
+                        types[element.slot] = element.type.name;
+                    });
+                    var pokeImg = pokeObject.sprites.front_default;
+
+                    pokeDex.push(new Pokemon(pokemon.name, pokeObject.id, pokeImg, types, stats));
+
+                    if(pokeDex.length == pokeArray.length)
                     {
-                        var pokeObject = JSON.parse(this.response);
-                        var stats = {};
-                        pokeObject.stats.forEach(element => {
-                            stats[element.stat.name] = element.base_stat;
-                        });
-                        var types = {};
-                        pokeObject.types.forEach(element => {
-                            types[element.slot] = element.type.name;
-                        });
-                        var pokeImg = pokeObject.sprites.front_default;
-                        
-                        pokeDex[generation].push(new Pokemon(pokemon.name, pokeObject.id, pokeImg, types, stats));
-    
-                        if(pokeDex[generation].length == pokeArray.length)
-                        {
-                            myStorage.setItem("pokemons", JSON.stringify(pokeDex));
-                            boot(pokeDex);
-                        }
+                        myStorage.setItem("pokemons", JSON.stringify(pokeDex));
+                        boot();
                     }
                 }
-    
-                xmlReq2.open("GET", url2, true);
-                xmlReq2.send();
-            });
-        }
+            }
+
+            xmlReq2.open("GET", url2, true);
+            xmlReq2.send();
+        });
     }
 
-    function cargarGeneraciones(generationList)
+    function cargarFullPokedex()
     {
-        for (let i = 0; i < generationList.length; i++) {
-            const generation = generationList[i];
-            if(pokeDex[generation].length>0)
+        var xmlReq = new XMLHttpRequest();
+        var url = "https://pokeapi.co/api/v2/pokemon/";
+    
+        xmlReq.onreadystatechange = function() 
+        {
+            if (this.readyState == 4 && this.status == 200) 
             {
-                boot(pokeDex);
-            }else{
-                var xmlReq = new XMLHttpRequest();
-                var url = "https://pokeapi.co/api/v2/pokemon/";
-            
-                xmlReq.onreadystatechange = function() 
-                {
-                    if (this.readyState == 4 && this.status == 200) 
-                    {
-                        var result = JSON.parse(this.response);
-                        var pokeArray = result.results.slice(genNumber(generation)[0], genNumber(generation)[1]);
-                        cargarPokemon(pokeArray, generation);
-                    }
-                };
-            
-                xmlReq.open("GET", url, true);
-                xmlReq.send();
+                var result = JSON.parse(this.response);
+                fullPokedex.first = result.results.slice(0,151);
+                fullPokedex.second = result.results.slice(151,251);
+                fullPokedex.third = result.results.slice(251,386);
+                fullPokedex.fourth = result.results.slice(386,494);
+                fullPokedex.fifth = result.results.slice(494,649);
+                fullPokedex.sixth = result.results.slice(649,721);
+                fullPokedex.seventh = result.results.slice(721,802);
+                fullPokedex.specials = result.results.slice(802,949);
+            }
+        };
+    
+        xmlReq.open("GET", url, true);
+        xmlReq.send();
+    }
+
+    function cargarGeneraciones(selectedGens)
+    {
+        for (let i = 0; i < selectedGens.length; i++) {
+            const element = selectedGens[i];
+            if(fullPokedex[element]!=undefined)
+            {
+                cargarPokemon(fullPokedex[element]);
             }
         }
-        
     }
 
     // <------------------------------------------------------------------------------>
@@ -368,23 +344,26 @@ window.onload = function()
     function cargarCheckboxes(){
         var divGen = document.getElementById("generation");
         var checkboxes = document.getElementsByName("genCheckbox");
-        var selectedGen = ["first"];
+        var selectedGens = ["first"];
 
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener("change", (evt)=>{
-                var index = selectedGen.indexOf(checkbox.value);
+                var index = selectedGens.indexOf(checkbox.value);
                 if(checkbox.checked)
                 {
-                    selectedGen.push(checkbox.value);
+                    selectedGens.push(checkbox.value);
                 }else{
                     if(index>-1)
                     {
-                        selectedGen.splice(index, 1);
+                        selectedGens.splice(index, 1);
                     }
                 }
-                cargarGeneraciones(selectedGen);     
+
+                cargarGeneraciones(selectedGens);
             });
         });
+
+        
     }
 
     function cargarSelectTipos(){
@@ -409,7 +388,7 @@ window.onload = function()
                 var tipo1 = document.getElementById("sel_tipo1").value;
                 var tipo2 = document.getElementById("sel_tipo2").value;
 
-                executeFilter();
+                filtrar();
             });
         });
         
@@ -422,7 +401,7 @@ window.onload = function()
         select.addEventListener("change", ()=>{
             selectedStat = select.value;
             orderEl.className = "mostrar";
-            executeFilter();
+            filtrar();
         });
 
     }
@@ -436,11 +415,11 @@ window.onload = function()
             {
                 element.innerHTML = "&uarr;";
                 asc_desc = 1;
-                executeFilter();
+                filtrar();
             }else if(asc_desc==1){
                 element.innerHTML = "&darr;";
                 asc_desc = 0;
-                executeFilter();
+                filtrar();
             }
         });
     }
@@ -448,7 +427,7 @@ window.onload = function()
     function cargarBuscador(){
         var buscador = document.getElementById('buscador');
         buscador.addEventListener('keyup', ()=>{
-            executeFilter();
+            filtrar();
         })
     }
 
@@ -456,18 +435,6 @@ window.onload = function()
 
 
     // <--------------------------MÉTODOS DE ORDENACIÓN------------------------------->
-    function ordenarPokeDex()
-    {
-        for (const gen in pokeDex) {
-            if (pokeDex.hasOwnProperty(gen)) {
-                const pkmns = pokeDex[gen];
-                if(pkmns.length>0)
-                {
-                    pkmns.sort(ordenarPokemon);
-                }
-            }
-        }
-    }
     function ordenarPokemon(p1, p2)
     {
         if(selectedStat != '')
